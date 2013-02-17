@@ -1,4 +1,6 @@
 chat
 ====
 
-chat server with node.js(plan)
+チャットサーバになる予定
+
+予定は未定
