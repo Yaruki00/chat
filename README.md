@@ -5,6 +5,8 @@ chat
 
 予定は未定
 
-node.js + express + MongoDB
+node.js + Express + MongoDB
 
 pracはゴミ置き場
+
+miniblogも練習跡
