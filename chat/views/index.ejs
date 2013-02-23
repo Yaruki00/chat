@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
+    <title>chat</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+		  <script src="/socket.io/socket.io.js"></script>
+			<script src="/javascripts/jquery-1.8.0.js"></script>
+			<script src="/javascripts/client.js"></script>
   </head>
   <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+    <h1>chat</h1>
+    <div><input type="text" id="input" /><button id="send">send</button></div>
+		<div id="list"></div>
   </body>
 </html>
