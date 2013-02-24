@@ -8,5 +8,9 @@ exports.index = function(req, res){
 };
 
 exports.login = function(req, res){
-		res.render('login', {});
+		res.render('login', {message: 'input id & pass'});
+};
+
+exports.signup = function(req, res){
+		res.render('signup', {});
 };
