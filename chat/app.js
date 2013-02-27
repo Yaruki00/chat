@@ -7,10 +7,12 @@ var express = require('express')
   , routes = require('./routes')
   , user = require('./routes/user')
   , http = require('http')
-  , path = require('path');
+  , path = require('path')
+  , mongoStore = require('connect-mongo')(express)
+  , mongoose = require('mongoose');
 
+// app configures
 var app = express();
-
 app.configure(function(){
   app.set('port', process.env.PORT || 3000);
   app.set('views', __dirname + '/views');
@@ -19,62 +21,61 @@ app.configure(function(){
   app.use(express.logger('dev'));
   app.use(express.bodyParser());
   app.use(express.methodOverride());
-  app.use(app.router);
   app.use(express.static(path.join(__dirname, 'public')));
+	app.use(express.cookieParser('your secret here'));
+	app.use(express.session({
+							secret: "secret",
+						  store: auth = new mongoStore({ db: 'db'})
+					}));
+	app.use(app.router);
 });
 
 app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
-app.get('/', routes.index);
+// routes
+app.get('/', function(req, res){
+				if(req.session.name) {
+						res.render('index', {title: 'chat'});
+				} else {
+						res.render('login', {message: 'input id & pass'});
+				}
+		});
 app.get('/login', routes.login);
 app.get('/users', user.list);
 app.get('/auth', function(req, res){
-				var res_error = function(){
-						res.render('login', {message: 'invalid id or pass'});
-				};
-				var res_success = function(){
-						res.render('success', {userid: userid, pass: pass});
-				};
-				var userid = req.param('userid');
-				var pass = req.param('pass');
-				var User = mongoose.model('User');
-				var i = {userid: userid, pass: pass};
-				User.findOne(i, function(err, doc){
-								if(doc==null) {
-										res_error();
+				var requser = {userid: req.param('userid'), pass: req.param('pass')};
+				UserModel.findOne(requser, function(err, doc) {
+								if(doc) {
+										req.session.name = req.param('userid');
+										res.redirect('/');
 								} else {
-										res_success();
+										res.render('login', {message: 'invalid id or pass'});
 								}
 						});
 		});
 app.get('/signup', routes.signup);
 app.get('/regist', function(req, res){
-				var res_error = function(){
-						res.render('login', {message: 'invalid id or pass'});
-				};
-				var res_success = function(){
-						res.render('success', {userid: userid, pass: pass});
-				};
-				var userid = req.param('userid');
-				var pass = req.param('pass');
-				var User = mongoose.model('User');
-				var i = {userid: userid, pass: pass};
-				User.findOne(i, function(err, doc){
-								if(doc==null) {
-										var user = new User();
-										user.userid = userid;
-										user.pass = pass;
-										user.save();
-										res_success();
+				UserModel.findOne({userid: req.param('userid')}, function(err, doc){
+								if(doc) {
+										res.render('signup', {message: 'userid already used'});
 								} else {
-										res_error();
+										var user = new UserModel();
+										user.userid = req.param('userid');
+										user.pass = req.param('pass');
+										user.save();
+										req.session.name = user.userid;
+										res.redirect('/');
 								}
-						})
+						});
+		});
+app.get('/logout', function(req, res){
+				delete req.session.name;
+				res.redirect('/');
 		});
 
-var mongoose = require('mongoose');
+// DB
 var db = mongoose.connect('mongodb://localhost/db');
 var Schema = mongoose.Schema;
 var User = new Schema({
@@ -82,6 +83,8 @@ var User = new Schema({
 				pass : String
 		});
 mongoose.model('User', User);
+var UserModel = mongoose.model('User');
+
 
 var server = http.createServer(app);
 server.listen(app.get('port'), function(){
