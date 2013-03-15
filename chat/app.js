@@ -9,6 +9,7 @@ var express = require('express')
   , http = require('http')
   , path = require('path')
   , mongoStore = require('connect-mongo')(express)
+	, sessionStore = new mongoStore({db: 'db'})
   , mongoose = require('mongoose');
 
 // app configures
@@ -22,10 +23,10 @@ app.configure(function(){
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.static(path.join(__dirname, 'public')));
-	app.use(express.cookieParser('your secret here'));
+	app.use(express.cookieParser("secret"));
 	app.use(express.session({
 							secret: "secret",
-						  store: auth = new mongoStore({ db: 'db'})
+						  store: sessionStore
 					}));
 	app.use(app.router);
 });
@@ -80,11 +81,17 @@ var db = mongoose.connect('mongodb://localhost/db');
 var Schema = mongoose.Schema;
 var User = new Schema({
 				userid : String,
-				pass : String
+				pass : String,
+				state : [State]
 		});
 mongoose.model('User', User);
 var UserModel = mongoose.model('User');
-
+var State = new Schema({
+				state : String,
+				date : Date
+		});
+mongoose.model('State', State);
+var StateModel = mongoose.model('State');
 
 var server = http.createServer(app);
 server.listen(app.get('port'), function(){
@@ -93,11 +100,43 @@ server.listen(app.get('port'), function(){
 
 var io = require('socket.io').listen(server);
 
-io.sockets.on('connection', function(socket){
-				socket.on('message', function(data) {
-								if(data && typeof data.text == 'string') {
-										socket.broadcast.json.emit('message', {text:data.text});
+io.configure(function() {
+				io.set('authorization', function(handshakeData, callback) {
+								if(handshakeData.headers.cookie) {
+										var cookie = require('express/node_modules/cookie').parse(decodeURIComponent(handshakeData.headers.cookie));
+										cookie = require('express/node_modules/connect').utils.parseSignedCookies(cookie, 'secret');
+										var sessionID = cookie['connect.sid'];
+										sessionStore.get(sessionID, function(err, session) {
+												if(err) {
+														callback(err.message, false);
+												} else if(!session) {
+														callback('session not found', false);
+												} else {
+														console.log("authorization success");
+														handshakeData.cookie = cookie;
+														handshakeData.sessionID = sessionID;
+														handshakeData.sessionStore = sessionStore;
+														handshakeData.session = new Session(handshakeData, session);
+														callback(null, true);
+												}
+												});
+								} else {
+										return callback('cookie not found', false);
 								}
 						});
 		});
 
+io.sockets.on('connection', function(socket){
+				
+				UserModel.find(function(err, items) {
+								for(i in items.state) {
+										socket.emit('message', {text: i.state});
+								}
+						});
+				socket.on('message', function(data) {
+								if(data && typeof data.text == 'string') {
+										
+										socket.broadcast.json.emit('message', {text:data.text});
+								}
+						});
+		});
