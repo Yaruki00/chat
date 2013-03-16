@@ -5,7 +5,7 @@ jQuery(function($) {
 				
 				//サーバからmessageイベントが送信されたとき
 				socket.on('message',function(data){
-								$('#list').prepend($('<div/>').text(data.text));
+								$('#list').prepend($('<div/>').text(data.user+": "+data.text+'('+data.date+')'));
 						});
 				//sendボタンがクリックされたとき
 				$('#send').click(function(){
@@ -13,7 +13,6 @@ jQuery(function($) {
 								if(text !== ''){
 										//サーバにテキストを送信
 										socket.emit('message',{text:text});
-										$('#list').prepend($('<div/>').text(text));
 										$('#input').val('');
 								}
 						});
