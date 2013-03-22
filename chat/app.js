@@ -36,94 +36,16 @@ app.configure('development', function(){
 });
 
 // routes
-app.get('/', function(req, res){
-    if(req.session.name) {
-        res.redirect('/lobby');
-    } else {
-        res.render('login', {message: 'input id & pass'});
-    }
-});
+app.get('/', routes.index);
 app.get('/login', routes.login);
 app.get('/users', user.list);
-app.get('/auth', function(req, res){
-    var requser = {userid: req.param('userid'), pass: req.param('pass')};
-    UserModel.findOne(requser, function(err, doc) {
-        if(doc) {
-            req.session.name = req.param('userid');
-            res.redirect('/lobby');
-        } else {
-            res.render('login', {message: 'invalid id or pass'});
-        }
-    });
-});
+app.get('/auth', routes.auth);
 app.get('/signup', routes.signup);
-app.get('/regist', function(req, res){
-    UserModel.findOne({userid: req.param('userid')}, function(err, doc){
-        if(doc) {
-            res.render('signup', {message: 'userid already used'});
-        } else {
-            var user = new UserModel();
-            user.userid = req.param('userid');
-            user.pass = req.param('pass');
-            user.state = [];
-            user.save();
-            req.session.name = user.userid;
-            res.redirect('/lobby');
-        }
-    });
-});
-app.get('/logout', function(req, res){
-    delete req.session.name;
-    res.redirect('/login');
-});
-app.get('/lobby', function(req, res){
-    RoomModel.find(function(err, items){
-        if(err) {
-            console.log(err);
-        } else {
-            res.render('lobby', {rooms: items, message: 'choose or create room'});
-        }
-    });
-});
-app.post('/createRoom', function(req, res){
-    if(req.body.name==null) {
-        res.redirect('/lobby');
-    } else {
-        RoomModel.findOne({name: req.body.name}, function(err, doc){
-            if(err) {
-                console.log(err);
-            } else if(doc) {
-                RoomModel.find(function(err, items){
-                    if(err) {
-                        console.log(err);
-                    } else {
-                        res.render('lobby', {rooms: items, message: 'input name already used'});
-                    }
-                });
-            } else {
-                var room = new RoomModel();
-                room.name = req.body.name;
-                room.owner = req.session.name;
-                room.createDate = new Date();
-                room.save();
-                
-                res.redirect('/lobby');
-            }
-        });
-    }
-});
-app.get('/room/:id', function(req, res){
-    RoomModel.findOne({name: req.params.id}, function(err, doc){
-        if(err) {
-            console.log(err);
-        } else if(doc) {
-            req.session.room = req.params.id;
-            res.render('chat', {name: req.session.room});
-        } else {
-            res.send('not exist room');
-        }
-    });
-});
+app.get('/regist', routes.regist);
+app.get('/logout', routes.logout);
+app.get('/lobby', routes.lobby);
+app.post('/createRoom',routes.createRoom);
+app.get('/room/:id', routes.room);
 
 // DB
 var db = mongoose.connect('mongodb://localhost/db');
@@ -134,6 +56,7 @@ var User = new Schema({
 });
 mongoose.model('User', User);
 var UserModel = mongoose.model('User');
+exports.UserModel = UserModel;
 var State = new Schema({
     user : String,
     state : String,
@@ -149,14 +72,16 @@ var Room = new Schema({
 });
 mongoose.model('Room', Room);
 var RoomModel = mongoose.model('Room');
+exports.RoomModel = RoomModel;
 
+// start server
 var server = http.createServer(app);
 server.listen(app.get('port'), function(){
     console.log("Express server listening on port " + app.get('port'));
 });
 
+// web socket
 var io = require('socket.io').listen(server);
-
 io.configure(function() {
     io.set('authorization', function(handshakeData, callback) {
         if(handshakeData.headers.cookie) {
