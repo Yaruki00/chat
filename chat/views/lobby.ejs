@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>loby</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <h1>chat rooms</h1>
+		<a href="/logout">logout</a>
+		<div><%= message %></div>
+    <form action="/createRoom" method="POST">
+      <div>
+        name:<input type="text" name="name" id="name" />
+        <button type="submit">create new room</button>
+      </div>
+    </form>
+    <% for(var i=rooms.length-1;i>=0;i--) { %>
+       <div><a href="/room/<%= rooms[i].name %>"><%= rooms[i].name %></a></div>
+    <% } %>
+  </body>
+</html>

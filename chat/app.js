@@ -38,7 +38,7 @@ app.configure('development', function(){
 // routes
 app.get('/', function(req, res){
         if(req.session.name) {
-            res.render('index', {title: 'chat'});
+            res.redirect('/lobby');
         } else {
             res.render('login', {message: 'input id & pass'});
         }
@@ -50,7 +50,7 @@ app.get('/auth', function(req, res){
         UserModel.findOne(requser, function(err, doc) {
                 if(doc) {
                     req.session.name = req.param('userid');
-                    res.redirect('/');
+                    res.redirect('/lobby');
                 } else {
                     res.render('login', {message: 'invalid id or pass'});
                 }
@@ -68,14 +68,62 @@ app.get('/regist', function(req, res){
                     user.state = [];
                     user.save();
                     req.session.name = user.userid;
-                    res.redirect('/');
+                    res.redirect('/lobby');
                 }
             });
     });
 app.get('/logout', function(req, res){
         delete req.session.name;
-        res.redirect('/');
+        res.redirect('/login');
     });
+app.get('/lobby', function(req, res){
+    RoomModel.find(function(err, items){
+        if(err) {
+            console.log(err);
+        } else {
+            res.render('lobby', {rooms: items, message: 'choose or create room'});
+        }
+    });
+});
+app.post('/createRoom', function(req, res){
+    if(req.body.name==null) {
+        res.redirect('/lobby');
+    } else {
+        RoomModel.findOne({name: req.body.name}, function(err, doc){
+            if(err) {
+                console.log(err);
+            } else if(doc) {
+                RoomModel.find(function(err, items){
+                    if(err) {
+                        console.log(err);
+                    } else {
+                        res.render('lobby', {rooms: items, message: 'input name already used'});
+                    }
+                });
+            } else {
+                var room = new RoomModel();
+                room.name = req.body.name;
+                room.owner = req.session.name;
+                room.createDate = new Date();
+                room.save();
+								
+                res.redirect('/lobby');
+            }
+        });
+    }
+});
+app.get('/room/:id', function(req, res){
+    RoomModel.findOne({name: req.params.id}, function(err, doc){
+				if(err) {
+						console.log(err);
+				} else if(doc) {
+						req.session.room = req.params.id;
+						res.render('chat', {name: req.session.room});
+				} else {
+						res.send('not exist room');
+				}
+		});
+});
 
 // DB
 var db = mongoose.connect('mongodb://localhost/db');
@@ -83,16 +131,24 @@ var Schema = mongoose.Schema;
 var User = new Schema({
         userid : String,
         pass : String,
-        state : [State]
     });
 mongoose.model('User', User);
 var UserModel = mongoose.model('User');
 var State = new Schema({
+        user : String,
         state : String,
         date : Date
     });
 mongoose.model('State', State);
 var StateModel = mongoose.model('State');
+var Room = new Schema({
+    name : String,
+    owner : String,
+		state : [State],
+    createDate : Date
+});
+mongoose.model('Room', Room);
+var RoomModel = mongoose.model('Room');
 
 var server = http.createServer(app);
 server.listen(app.get('port'), function(){
@@ -128,31 +184,25 @@ io.configure(function() {
     });
 
 io.sockets.on('connection', function(socket){
-        var user;
-        UserModel.findOne({userid:socket.handshake.session.name}, function(err, doc){
-                if(err) {
-                    console.log(err);
-                } else {
-                    if(doc) {
-                        user = doc;
-                    } else {
-                        console.log('connection: user not found');
-                    }
-                }
-            });
-        UserModel.find(function(err, items) {
-                for(var i=0;i<items.length;i++) {
-                    for(var j=0;j<items[i].state.length;j++) {
-                        socket.emit('message', {user:items[i].userid, text:items[i].state[j].state, date:items[i].state[j].date});
-                    }
-                }
-            });
-        socket.on('message', function(data) {
-                if(data && typeof data.text == 'string') {
-                    date = new Date();
-                    io.sockets.emit('message', {user:socket.handshake.session.name, text:data.text, date:date});
-                    user.state.push({state:data.text, date:date});
-                    user.save();
-                }
-            });
+    var room;
+    RoomModel.findOne({name:socket.handshake.session.room}, function(err, doc){
+        if(err) {
+            console.log(err);
+        } else if(doc) {
+            room = doc;
+						for(var i=0;i<room.state.length;i++) {
+								socket.emit('message', {user:room.state[i].user, text:room.state[i].state, date:room.state[i].date});
+						}
+				} else {
+                console.log('connection: room not found');
+        }
     });
+    socket.on('message', function(data) {
+        if(data && typeof data.text == 'string') {
+            date = new Date();
+            io.sockets.emit('message', {user:socket.handshake.session.name, text:data.text, date:date});
+            room.state.push({user:socket.handshake.session.name, state:data.text, date:date});
+            room.save();
+        }
+    });
+});
