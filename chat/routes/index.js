@@ -79,7 +79,7 @@ exports.createRoom =  function(req, res){
                     }
                 });
             } else {
-                var room = new RoomModel();
+                var room = new app.RoomModel();
                 room.name = req.body.name;
                 room.owner = req.session.name;
                 room.createDate = new Date();
