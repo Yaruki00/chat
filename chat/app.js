@@ -15,24 +15,24 @@ var express = require('express')
 // app configures
 var app = express();
 app.configure(function(){
-		app.set('port', process.env.PORT || 3000);
-		app.set('views', __dirname + '/views');
-		app.set('view engine', 'ejs');
-		app.use(express.favicon());
-		app.use(express.logger('dev'));
-		app.use(express.bodyParser());
-		app.use(express.methodOverride());
-		app.use(express.static(path.join(__dirname, 'public')));
-		app.use(express.cookieParser("secret"));
-		app.use(express.session({
-				secret: "secret",
-				store: sessionStore
-		}));
-		app.use(app.router);
+    app.set('port', process.env.PORT || 3000);
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'ejs');
+    app.use(express.favicon());
+    app.use(express.logger('dev'));
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.static(path.join(__dirname, 'public')));
+    app.use(express.cookieParser("secret"));
+    app.use(express.session({
+        secret: "secret",
+        store: sessionStore
+    }));
+    app.use(app.router);
 });
 
 app.configure('development', function(){
-		app.use(express.errorHandler());
+    app.use(express.errorHandler());
 });
 
 // routes
@@ -106,7 +106,7 @@ app.post('/createRoom', function(req, res){
                 room.owner = req.session.name;
                 room.createDate = new Date();
                 room.save();
-								
+                
                 res.redirect('/lobby');
             }
         });
@@ -114,15 +114,15 @@ app.post('/createRoom', function(req, res){
 });
 app.get('/room/:id', function(req, res){
     RoomModel.findOne({name: req.params.id}, function(err, doc){
-				if(err) {
-						console.log(err);
-				} else if(doc) {
-						req.session.room = req.params.id;
-						res.render('chat', {name: req.session.room});
-				} else {
-						res.send('not exist room');
-				}
-		});
+        if(err) {
+            console.log(err);
+        } else if(doc) {
+            req.session.room = req.params.id;
+            res.render('chat', {name: req.session.room});
+        } else {
+            res.send('not exist room');
+        }
+    });
 });
 
 // DB
@@ -144,7 +144,7 @@ var StateModel = mongoose.model('State');
 var Room = new Schema({
     name : String,
     owner : String,
-		state : [State],
+    state : [State],
     createDate : Date
 });
 mongoose.model('Room', Room);
@@ -190,10 +190,10 @@ io.sockets.on('connection', function(socket){
             console.log(err);
         } else if(doc) {
             room = doc;
-						for(var i=0;i<room.state.length;i++) {
-								socket.emit('message', {user:room.state[i].user, text:room.state[i].state, date:room.state[i].date});
-						}
-				} else {
+            for(var i=0;i<room.state.length;i++) {
+                socket.emit('message', {user:room.state[i].user, text:room.state[i].state, date:room.state[i].date});
+            }
+        } else {
             console.log('connection: room not found');
         }
     });
