@@ -21,31 +21,41 @@ exports.signup = function(req, res){
 };
 
 exports.auth = function(req, res){
-    var requser = {userid: req.param('userid'), pass: req.param('pass')};
-    app.UserModel.findOne(requser, function(err, doc) {
-        if(doc) {
-            req.session.name = req.param('userid');
-            res.redirect('/lobby');
-        } else {
-            res.render('login', {message: 'invalid id or pass'});
-        }
-    });
+    var userid = req.param('userid'), pass = req.param('pass');
+    if(userid === '' || pass === '') {
+        res.redirect('/login');
+    } else {
+        var user = {userid: userid, pass: pass};
+        app.UserModel.findOne(user, function(err, doc) {
+            if(doc) {
+                req.session.name = userid;
+                res.redirect('/lobby');
+            } else {
+                res.render('login', {message: 'invalid id or pass'});
+            }
+        });
+    }
 };
 
 exports.regist = function(req, res){
-    app.UserModel.findOne({userid: req.param('userid')}, function(err, doc){
-        if(doc) {
-            res.render('signup', {message: 'userid already used'});
-        } else {
-            var user = new UserModel();
-            user.userid = req.param('userid');
-            user.pass = req.param('pass');
-            user.state = [];
-            user.save();
-            req.session.name = user.userid;
-            res.redirect('/lobby');
-        }
-    });
+    var userid = req.param('userid'), pass = req.param('pass');
+    if(userid === '' || pass === '') {
+        res.redirect('/signup');
+    } else {
+        app.UserModel.findOne({userid: userid}, function(err, doc){
+            if(doc) {
+                res.render('signup', {message: 'userid already used'});
+            } else {
+                var user = new app.UserModel();
+                user.userid = userid;
+                user.pass = pass;
+                user.state = [];
+                user.save();
+                req.session.name = user.userid;
+                res.redirect('/lobby');
+            }
+        });
+    }
 };
 
 exports.logout = function(req, res){
@@ -54,17 +64,23 @@ exports.logout = function(req, res){
 };
 
 exports.lobby = function(req, res){
-    app.RoomModel.find(function(err, items){
-        if(err) {
-            console.log(err);
-        } else {
-            res.render('lobby', {rooms: items, message: 'choose or create room'});
-        }
-    });
+    if(typeof req.session.name === 'undefined') {
+        res.redirect('/login');
+    } else {
+        app.RoomModel.find(function(err, items){
+            if(err) {
+                console.log(err);
+            } else {
+                res.render('lobby', {rooms: items, message: 'choose or create room'});
+            }
+        });
+    }
 };
 
 exports.createRoom =  function(req, res){
-    if(req.body.name==null) {
+    if(typeof req.session.name === 'undefined') {
+        res.redirect('/login');
+    } else if(typeof req.body.name === 'undefined' || req.body.name === '') {
         res.redirect('/lobby');
     } else {
         app.RoomModel.findOne({name: req.body.name}, function(err, doc){
@@ -91,14 +107,18 @@ exports.createRoom =  function(req, res){
 };
 
 exports.room = function(req, res){
-    app.RoomModel.findOne({name: req.params.id}, function(err, doc){
-        if(err) {
-            console.log(err);
-        } else if(doc) {
-            req.session.room = req.params.id;
-            res.render('chat', {name: req.session.room});
-        } else {
-            res.send('not exist room');
-        }
-    });
+    if(typeof req.session.name === 'undefined') {
+        res.redirect('/login');
+    } else {
+        app.RoomModel.findOne({name: req.params.id}, function(err, doc){
+            if(err) {
+                console.log(err);
+            } else if(doc) {
+                req.session.room = req.params.id;
+                res.render('chat', {name: req.session.room});
+            } else {
+                res.send('not exist room');
+            }
+        });
+    }
 };
