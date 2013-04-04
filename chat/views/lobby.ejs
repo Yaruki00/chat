@@ -3,15 +3,17 @@
   <head>
     <title>lobby</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="/javascripts/formCheck.js"></script>
   </head>
   <body>
     <h1>chat rooms</h1>
 		<a href="/logout">logout</a>
 		<div><%= message %></div>
-    <form action="/createRoom" method="POST">
+    <form id="createRoom" action="/createRoom" method="POST">
       <div>
         name:<input type="text" name="name" id="name" />
         <button type="submit">create new room</button>
+        <span id="createRoom_msg"></span>
       </div>
     </form>
     <% for(var i=rooms.length-1;i>=0;i--) { %>

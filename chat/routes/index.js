@@ -22,40 +22,32 @@ exports.signup = function(req, res){
 
 exports.auth = function(req, res){
     var userid = req.param('userid'), pass = req.param('pass');
-    if(userid === '' || pass === '') {
-        res.redirect('/login');
-    } else {
-        var user = {userid: userid, pass: pass};
-        app.UserModel.findOne(user, function(err, doc) {
-            if(doc) {
-                req.session.name = userid;
-                res.redirect('/lobby');
-            } else {
-                res.render('login', {message: 'invalid id or pass'});
-            }
-        });
-    }
+    var user = {userid: userid, pass: pass};
+    app.UserModel.findOne(user, function(err, doc) {
+        if(doc) {
+            req.session.name = userid;
+            res.redirect('/lobby');
+        } else {
+            res.render('login', {message: 'invalid id or pass'});
+        }
+    });
 };
 
 exports.regist = function(req, res){
     var userid = req.param('userid'), pass = req.param('pass');
-    if(userid === '' || pass === '') {
-        res.redirect('/signup');
-    } else {
-        app.UserModel.findOne({userid: userid}, function(err, doc){
-            if(doc) {
-                res.render('signup', {message: 'userid already used'});
-            } else {
-                var user = new app.UserModel();
-                user.userid = userid;
-                user.pass = pass;
-                user.state = [];
-                user.save();
-                req.session.name = user.userid;
-                res.redirect('/lobby');
-            }
-        });
-    }
+    app.UserModel.findOne({userid: userid}, function(err, doc){
+        if(doc) {
+            res.render('signup', {message: 'userid already used'});
+        } else {
+            var user = new app.UserModel();
+            user.userid = userid;
+            user.pass = pass;
+            user.state = [];
+            user.save();
+            req.session.name = user.userid;
+            res.redirect('/lobby');
+        }
+    });
 };
 
 exports.logout = function(req, res){
@@ -80,8 +72,6 @@ exports.lobby = function(req, res){
 exports.createRoom =  function(req, res){
     if(typeof req.session.name === 'undefined') {
         res.redirect('/login');
-    } else if(typeof req.body.name === 'undefined' || req.body.name === '') {
-        res.redirect('/lobby');
     } else {
         app.RoomModel.findOne({name: req.body.name}, function(err, doc){
             if(err) {
