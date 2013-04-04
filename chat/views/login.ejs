@@ -8,18 +8,18 @@
   <body>
     <h1>login</h1>
     <div>input ID & pass</div>
-	    <div><font color="red"><%= message %></font></div>
-		<form name="user" id="user" action="/auth" method="GET">
-		  <div>
-            ID:<input type="text" name="userid" id="userid" />
-            <span id="userid_msg"></span>
-          </div>
-		  <div>
-            pass:<input type="text" name="pass" id="pass" />
-            <span id="pass_msg"></span>
-          </div>
-		  <div><button type="submit">login</button></div>
-		</form>
-		<a href="/signup">signup</a>
+	<div><font color="red"><%= message %></font></div>
+	<form name="user" id="user" action="/auth" method="GET">
+	  <div>
+        ID:<input type="text" name="userid" id="userid" />
+        <span id="userid_msg"></span>
+      </div>
+	  <div>
+        pass:<input type="text" name="pass" id="pass" />
+        <span id="pass_msg"></span>
+      </div>
+	  <div><button type="submit">login</button></div>
+	</form>
+	<a href="/signup">signup</a>
   </body>
 </html>
