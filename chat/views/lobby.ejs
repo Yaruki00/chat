@@ -8,7 +8,8 @@
   <body>
     <h1>chat rooms</h1>
 		<a href="/logout">logout</a>
-		<div><%= message %></div>
+        <div>choose or create room</div>
+		<div><font color="red"><%= message %></font></div>
     <form id="createRoom" action="/createRoom" method="POST">
       <div>
         name:<input type="text" name="name" id="name" />

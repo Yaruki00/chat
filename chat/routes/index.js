@@ -8,16 +8,16 @@ exports.index = function(req, res){
     if(req.session.name) {
         res.redirect('/lobby');
     } else {
-        res.render('login', {message: 'input id & pass'});
+        res.render('login', {message: ''});
     }
 };
 
 exports.login = function(req, res){
-    res.render('login', {message: 'input id & pass'});
+    res.render('login', {message: ''});
 };
 
 exports.signup = function(req, res){
-    res.render('signup', {message: 'input new account information'});
+    res.render('signup', {message: ''});
 };
 
 exports.auth = function(req, res){
@@ -28,7 +28,7 @@ exports.auth = function(req, res){
             req.session.name = userid;
             res.redirect('/lobby');
         } else {
-            res.render('login', {message: 'invalid id or pass'});
+            res.render('login', {message: 'invalid ID or pass'});
         }
     });
 };
@@ -63,7 +63,7 @@ exports.lobby = function(req, res){
             if(err) {
                 console.log(err);
             } else {
-                res.render('lobby', {rooms: items, message: 'choose or create room'});
+                res.render('lobby', {rooms: items, message: ''});
             }
         });
     }
